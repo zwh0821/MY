@@ -2,13 +2,11 @@ package strategyImpl;
 
 import inter.Strategy;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @program: CommunicationTest
@@ -19,39 +17,33 @@ import java.nio.charset.StandardCharsets;
 public class SocketStrategy implements Strategy {
 
     boolean isOpen = false;
-    private static final String HOST="192.168.4.1";
-    private static final int PORT=10001;
+    private static final String HOST = "192.168.4.1";
+    private static final int PORT = 10001;
     private static final String order = "8C 01 01 05 05";
 
     @Override
     public void startListening() throws Exception {
         try {
-            Socket socket  = new Socket(HOST, PORT);
+            Socket socket = new Socket(HOST, PORT);
             this.isOpen = true;
-            InputStream is;
-            OutputStream os;
-            while (true){
-                is = socket.getInputStream();
-                os = socket.getOutputStream();
-                if(isOpen){
-                    os.write(order.getBytes(StandardCharsets.UTF_8));
-                    byte[] datas = new byte[1024];
-                    is.read(datas);
-                    //处理数据
-
-                    //渲染界面
-
-                }else{
-                    is.close();
-                    os.close();
-                    socket.close();
-                }
+            //得到一个输入流，用于接收服务器响应的数据
+            InputStream inputStream = socket.getInputStream();
+            BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
+            System.out.println("客户端IP地址:" + socket.getInetAddress().getHostAddress());
+            String info = "";
+            byte[] buffer = new byte[8];
+            int len = 0;
+            while (-1 != (len = bufferedInputStream.read(buffer))) {
+                Map<Integer, Object> data = DataProcess.handleData(buffer);
+                System.out.println(DataProcess.handleData(buffer));
             }
-        }
-        catch (UnknownHostException e) {
+            socket.shutdownInput();
+        } catch (UnknownHostException e) {
             throw new Exception("未找到对应端口");
         } catch (IOException e) {
-            throw new Exception("监听端口失败:"+e.getMessage());
+            throw new Exception("监听端口失败:" + e.getMessage());
+        } catch (Exception e) {
+            throw new Exception(e.getMessage());
         }
 
     }
